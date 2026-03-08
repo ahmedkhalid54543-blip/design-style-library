@@ -1,0 +1,190 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>设计风格 Prompt 库</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Noto+Sans+SC:wght@400;500;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              page: "#1a1a1a",
+              card: "#242424",
+              brand: "#FF6B35"
+            },
+            fontFamily: {
+              sans: ["Noto Sans SC", "sans-serif"],
+              mono: ["JetBrains Mono", "monospace"]
+            },
+            boxShadow: {
+              glow: "0 0 0 1px rgba(255, 107, 53, 0.35), 0 10px 30px rgba(0, 0, 0, 0.35)"
+            }
+          }
+        }
+      };
+    </script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <script src="./data.js"></script>
+  </head>
+  <body class="min-h-screen bg-page text-zinc-100 font-sans" x-data="styleLibrary()">
+    <main class="mx-auto max-w-7xl px-4 py-10 sm:px-6 sm:py-12">
+      <header class="mb-8">
+        <p class="mb-3 inline-flex rounded-full border border-brand/40 bg-brand/10 px-3 py-1 text-xs text-brand">Lovart 4K Prompt Library</p>
+        <h1 class="text-3xl font-extrabold tracking-tight sm:text-4xl">设计风格 Prompt 库</h1>
+        <p class="mt-2 text-zinc-400">20位传奇设计师 × Lovart 4K 生成</p>
+      </header>
+
+      <section class="mb-4">
+        <input
+          type="text"
+          x-model="keyword"
+          placeholder="搜索艺术家 / 描述 / Prompt"
+          class="w-full rounded-[10px] border border-zinc-700 bg-card px-4 py-3 text-sm outline-none transition focus:border-brand focus:shadow-glow"
+        />
+      </section>
+
+      <section class="mb-6 flex flex-wrap gap-2">
+        <template x-for="tab in tabs" :key="tab">
+          <button
+            @click="activeTab = tab"
+            class="rounded-[10px] border px-4 py-2 text-sm transition"
+            :class="activeTab === tab ? 'border-brand bg-brand text-white' : 'border-zinc-700 bg-card text-zinc-300 hover:border-zinc-500'"
+            x-text="tab"
+          ></button>
+        </template>
+      </section>
+
+      <section>
+        <p class="mb-4 text-sm text-zinc-400">结果：<span class="text-brand" x-text="filtered.length"></span></p>
+        <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          <template x-for="item in filtered" :key="item.nameEn">
+            <article
+              @click="openModal(item)"
+              class="cursor-pointer overflow-hidden rounded-[10px] border border-zinc-700 bg-card transition duration-200 hover:-translate-y-1 hover:border-brand/60"
+            >
+              <div class="h-20" :style="`background:${item.color}`"></div>
+              <div class="p-4">
+                <div class="mb-2 flex items-start justify-between gap-2">
+                  <h2 class="text-base font-semibold leading-snug" x-text="`${item.name} / ${item.nameEn}`"></h2>
+                  <span class="shrink-0 rounded-[10px] border border-brand/40 px-2 py-1 text-xs text-brand" x-text="item.category"></span>
+                </div>
+                <p class="text-sm text-zinc-300" x-text="item.description"></p>
+                <p class="mt-3 text-xs text-zinc-400" x-text="`适合场景：${item.useCases.join('、')}`"></p>
+                <pre class="mt-3 line-clamp-3 rounded-[10px] border border-zinc-700 bg-zinc-900 p-3 text-xs text-zinc-300 font-mono" x-text="item.prompt"></pre>
+                <button
+                  @click.stop="copyPrompt(item.nameEn, item.prompt)"
+                  class="mt-3 w-full rounded-[10px] py-2 text-sm font-medium text-white transition"
+                  :class="copiedId === item.nameEn ? 'bg-emerald-600' : 'bg-brand hover:brightness-110'"
+                  x-text="copiedId === item.nameEn ? '已复制 ✓' : '复制 Prompt'"
+                ></button>
+              </div>
+            </article>
+          </template>
+        </div>
+      </section>
+    </main>
+
+    <div
+      x-show="modalOpen"
+      x-transition.opacity
+      class="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4"
+      @click.self="closeModal"
+      @keydown.escape.window="closeModal"
+    >
+      <article x-show="activeItem" x-transition class="w-full max-w-3xl rounded-[10px] border border-zinc-700 bg-card p-6">
+        <div class="mb-4 h-28 rounded-[10px]" :style="`background:${activeItem?.color || '#242424'}`"></div>
+        <div class="mb-3 flex items-start justify-between gap-3">
+          <h3 class="text-xl font-bold" x-text="activeItem ? `${activeItem.name} / ${activeItem.nameEn}` : ''"></h3>
+          <span class="rounded-[10px] border border-brand/40 px-2 py-1 text-xs text-brand" x-text="activeItem?.category"></span>
+        </div>
+        <p class="text-sm text-zinc-300" x-text="activeItem?.description"></p>
+        <p class="mt-2 text-sm text-zinc-400" x-text="activeItem ? `适合场景：${activeItem.useCases.join('、')}` : ''"></p>
+
+        <h4 class="mt-5 text-sm font-semibold text-brand">完整 Prompt（Lovart 4K）</h4>
+        <pre class="mt-2 whitespace-pre-wrap rounded-[10px] border border-zinc-700 bg-zinc-900 p-4 text-sm text-zinc-200 font-mono" x-text="activeItem?.prompt"></pre>
+
+        <h4 class="mt-5 text-sm font-semibold text-brand">构图技巧说明</h4>
+        <p class="mt-2 text-sm text-zinc-300" x-text="compositionTip(activeItem)"></p>
+
+        <div class="mt-6 flex flex-col gap-2 sm:flex-row">
+          <button
+            @click="copyPrompt(activeItem.nameEn, activeItem.prompt)"
+            class="flex-1 rounded-[10px] py-2 text-sm font-medium text-white"
+            :class="copiedId === activeItem?.nameEn ? 'bg-emerald-600' : 'bg-brand'"
+            x-text="copiedId === activeItem?.nameEn ? '已复制 ✓' : '复制 Prompt'"
+          ></button>
+          <button @click="closeModal" class="flex-1 rounded-[10px] border border-zinc-600 bg-zinc-800 py-2 text-sm">关闭</button>
+        </div>
+      </article>
+    </div>
+
+    <script>
+      function styleLibrary() {
+        return {
+          tabs: ["全部", "Belle Époque", "现代主义", "电影海报", "当代"],
+          activeTab: "全部",
+          keyword: "",
+          copiedId: "",
+          modalOpen: false,
+          activeItem: null,
+          styles: window.STYLE_DATA || [],
+          get filtered() {
+            const q = this.keyword.trim().toLowerCase();
+            return this.styles.filter((item) => {
+              const tabMatch = this.activeTab === "全部" || item.category === this.activeTab;
+              const text = [item.name, item.nameEn, item.category, item.description, item.prompt, item.useCases.join(" ")]
+                .join(" ")
+                .toLowerCase();
+              const searchMatch = !q || text.includes(q);
+              return tabMatch && searchMatch;
+            });
+          },
+          openModal(item) {
+            this.activeItem = item;
+            this.modalOpen = true;
+          },
+          closeModal() {
+            this.modalOpen = false;
+            this.activeItem = null;
+          },
+          compositionTip(item) {
+            if (!item) return "";
+            const tips = {
+              "Belle Époque": "建议使用中轴或弧线引导构图，主体偏上，边框和装饰纹样围合视觉焦点，营造古典海报气质。",
+              "现代主义": "优先网格与几何切分，减少冗余元素，控制层级和留白，让图形隐喻与标题形成强对位关系。",
+              "电影海报": "采用前中后景分层与三角视觉动线，强化主角轮廓和戏剧光影，保证远看也有明确叙事重心。",
+              "当代": "可以使用大色块与高对比笔触，主元素放在偏心位置制造张力，再用纹理与次级元素平衡节奏。"
+            };
+            return tips[item.category] || "先确定视觉重心，再围绕重心建立层级、对比和留白。";
+          },
+          async copyPrompt(id, text) {
+            try {
+              await navigator.clipboard.writeText(text);
+            } catch (error) {
+              const textarea = document.createElement("textarea");
+              textarea.value = text;
+              document.body.appendChild(textarea);
+              textarea.select();
+              document.execCommand("copy");
+              document.body.removeChild(textarea);
+            }
+            this.copiedId = id;
+            setTimeout(() => {
+              if (this.copiedId === id) {
+                this.copiedId = "";
+              }
+            }, 1500);
+          }
+        };
+      }
+    </script>
+  </body>
+</html>
