@@ -104,12 +104,15 @@
       @click.self="closeModal"
       @keydown.escape.window="closeModal"
     >
-      <article x-show="activeItem" x-transition class="w-full max-w-3xl rounded-[10px] border border-zinc-700 bg-card p-6">
+      <article x-show="activeItem" x-transition class="w-full max-w-3xl rounded-[10px] border border-zinc-700 bg-card p-6 max-h-[90vh] overflow-y-auto">
+        <div class="flex items-center justify-between mb-3">
+          <h3 class="text-xl font-bold" x-text="activeItem ? `${activeItem.name} / ${activeItem.nameEn}` : ''"></h3>
+          <button @click="closeModal" class="ml-3 flex-shrink-0 rounded-full w-8 h-8 flex items-center justify-center bg-zinc-700 text-zinc-300 hover:bg-zinc-600 text-lg leading-none">✕</button>
+        </div>
         <div class="mb-4 w-full aspect-[4/3] overflow-hidden rounded-[10px] relative" :style="activeItem?.image ? '' : `background:${activeItem?.color || '#242424'}`">
             <img x-show="activeItem?.image" :src="activeItem?.image" :alt="activeItem?.nameEn" class="absolute inset-0 w-full h-full object-cover object-center" />
           </div>
-        <div class="mb-3 flex items-start justify-between gap-3">
-          <h3 class="text-xl font-bold" x-text="activeItem ? `${activeItem.name} / ${activeItem.nameEn}` : ''"></h3>
+        <div class="mb-3 flex items-center gap-2">
           <span class="rounded-[10px] border border-brand/40 px-2 py-1 text-xs text-brand" x-text="activeItem?.category"></span>
         </div>
         <p class="text-sm text-zinc-300" x-text="activeItem?.description"></p>
